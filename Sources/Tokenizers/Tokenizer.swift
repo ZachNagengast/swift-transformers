@@ -7,7 +7,9 @@
 
 import Foundation
 import Hub
+#if canImport(Jinja)
 import Jinja
+#endif
 
 /// A type alias for chat messages, represented as key-value pairs.
 public typealias Message = [String: Any]
@@ -474,11 +476,13 @@ public class PreTrainedTokenizer: @unchecked Sendable, Tokenizer {
 
     private let cleanUpTokenizationSpaces: Bool
 
+    #if canImport(Jinja)
     /// Cache for compiled Jinja templates keyed by their literal template string
     private var compiledChatTemplateCache: [String: Template] = [:]
 
     /// Lock to protect the compiled chat template cache from concurrent access
     private let cacheLock = NSLock()
+    #endif
 
     /// Initializes a tokenizer from Hugging Face configuration files.
     ///
@@ -533,6 +537,7 @@ public class PreTrainedTokenizer: @unchecked Sendable, Tokenizer {
         model = try TokenizerModel.from(tokenizerConfig: tokenizerConfig, tokenizerData: tokenizerData, addedTokens: addedTokens, strict: strict)
     }
 
+    #if canImport(Jinja)
     private func compiledTemplate(for templateString: String) throws -> Template {
         // Fast path: check cache under lock
         cacheLock.lock()
@@ -557,6 +562,7 @@ public class PreTrainedTokenizer: @unchecked Sendable, Tokenizer {
         compiledChatTemplateCache[templateString] = compiled
         return compiled
     }
+    #endif
 
     func preTokenize(_ text: String, options: PreTokenizerOptions) -> [String] {
         guard let preTokenizer else { return [text] }
@@ -690,7 +696,11 @@ public class PreTrainedTokenizer: @unchecked Sendable, Tokenizer {
 
     /// Whether this tokenizer has a chat template configured.
     public var hasChatTemplate: Bool {
-        !tokenizerConfig.chatTemplate.isNull()
+        #if canImport(Jinja)
+        return !tokenizerConfig.chatTemplate.isNull()
+        #else
+        return false
+        #endif
     }
 
     public func applyChatTemplate(messages: [Message]) throws -> [Int] {
@@ -728,10 +738,14 @@ public class PreTrainedTokenizer: @unchecked Sendable, Tokenizer {
         maxLength: Int? = nil,
         tools: [ToolSpec]? = nil
     ) throws -> [Int] {
-        try applyChatTemplate(
+        #if canImport(Jinja)
+        return try applyChatTemplate(
             messages: messages, chatTemplate: chatTemplate, addGenerationPrompt: addGenerationPrompt, truncation: truncation, maxLength: maxLength,
             tools: tools, additionalContext: nil
         )
+        #else
+        throw TokenizerError.chatTemplate("Chat templates require Jinja. Import the Transformers library or add swift-jinja dependency to use chat templates.")
+        #endif
     }
 
     public func applyChatTemplate(
@@ -748,6 +762,7 @@ public class PreTrainedTokenizer: @unchecked Sendable, Tokenizer {
         tools: [ToolSpec]? = nil,
         additionalContext: [String: Any]? = nil
     ) throws -> [Int] {
+        #if canImport(Jinja)
         var selectedChatTemplate: String?
         if let chatTemplate, case let .literal(template) = chatTemplate {
             // Use chat template from argument
@@ -831,6 +846,9 @@ public class PreTrainedTokenizer: @unchecked Sendable, Tokenizer {
         }
 
         return encodedTokens
+        #else
+        throw TokenizerError.chatTemplate("Chat templates require Jinja. Import the Transformers library or add swift-jinja dependency to use chat templates.")
+        #endif
     }
 }
 

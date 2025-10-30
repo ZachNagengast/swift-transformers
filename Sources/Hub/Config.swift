@@ -5,7 +5,10 @@
 //  Created by Piotr Kowalczuk on 06.03.25.
 
 import Foundation
+
+#if canImport(Jinja)
 import Jinja
+#endif
 
 // MARK: - Configuration files with dynamic lookup
 
@@ -434,6 +437,7 @@ public struct Config: Hashable, Sendable,
         self.dictionary(or: or)
     }
 
+    #if canImport(Jinja)
     public func jinjaValue() -> Jinja.Value {
         switch self.value {
         case let .array(val):
@@ -458,6 +462,7 @@ public struct Config: Hashable, Sendable,
             return .null
         }
     }
+    #endif
 
     public func dictionary() -> [BinaryDistinctString: Config]? {
         if case let .dictionary(val) = self.value {

@@ -20,13 +20,13 @@ let package = Package(
         .package(url: "https://github.com/huggingface/swift-jinja.git", from: "2.0.0")
     ],
     targets: [
-        .target(name: "Generation", dependencies: ["Tokenizers"]),
-        .target(name: "Hub", dependencies: [.product(name: "Jinja", package: "swift-jinja")], resources: [.process("Resources")], swiftSettings: swiftSettings),
-        .target(name: "Models", dependencies: ["Tokenizers", "Generation"]),
-        .target(name: "Tokenizers", dependencies: ["Hub", .product(name: "Jinja", package: "swift-jinja")]),
-        .testTarget(name: "GenerationTests", dependencies: ["Generation"]),
+        .target(name: "Hub", resources: [.process("Resources")], swiftSettings: swiftSettings),
+        .target(name: "Tokenizers", dependencies: ["Hub"]),
+        .target(name: "Generation", dependencies: ["Tokenizers", .product(name: "Jinja", package: "swift-jinja")]),
+        .target(name: "Models", dependencies: ["Tokenizers", "Generation", .product(name: "Jinja", package: "swift-jinja")]),
         .testTarget(name: "HubTests", dependencies: ["Hub", .product(name: "Jinja", package: "swift-jinja")], swiftSettings: swiftSettings),
+        .testTarget(name: "TokenizersTests", dependencies: ["Tokenizers", "Models", "Hub", .product(name: "Jinja", package: "swift-jinja")], resources: [.process("Resources")]),
+        .testTarget(name: "GenerationTests", dependencies: ["Generation"]),
         .testTarget(name: "ModelsTests", dependencies: ["Models", "Hub"], resources: [.process("Resources")]),
-        .testTarget(name: "TokenizersTests", dependencies: ["Tokenizers", "Models", "Hub"], resources: [.process("Resources")]),
     ]
 )
